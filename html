@@ -1,0 +1,65 @@
+<template>
+    <div class="slds-grid slds-gutters slds-grid_align-spread custom-container">
+        <div class="slds-col slds-size_1-of-2 date-filter-container">
+            <lightning-combobox
+                name="dateFilter"
+                label="Date Filter"
+                value={selectedFilter}
+                placeholder="Select a Date Filter"
+                options={filterOptions}
+                onchange={handleFilterChange}
+            ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-shrink-none button-top-margin">
+            <lightning-button-menu
+                icon-name="utility:download"
+                label="Export As"
+                alternative-text="Export"
+                menu-alignment="right"
+                onselect={handleMenuSelect}
+                variant="destructive"
+                 disabled={isExportDisabled}
+            >
+                <lightning-menu-item
+                    label="Pdf"
+                    value="pdf"
+                    
+                ></lightning-menu-item>
+                <lightning-menu-item
+                    label="Doc"
+                    
+                    value="doc"
+                ></lightning-menu-item>
+            </lightning-button-menu>
+        </div>
+    </div>
+
+    <lightning-card title={title}>
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <template lwc:if={hasLeads}>
+            <template for:each={groupedLeads} for:item="group">
+                <template for:each={group.subGroups} for:item="subGroup">
+                    <template for:each={subGroup.owners} for:item="owner">
+                        <lightning-card key={owner.ownerName} title={owner.ownerName}>
+                            <lightning-datatable
+                                data={owner.leads}
+                                columns={columns}
+                                key-field="Id"
+                                hide-checkbox-column="true"
+                            ></lightning-datatable>
+                        </lightning-card>
+                    </template>
+                </template>
+            </template>
+        </template>
+        <template lwc:else>
+            <br/>
+            <div class="slds-align_absolute-center">
+                <p><b>No Records to display</b></p>
+            </div>
+        </template>
+    </lightning-card>
+</template>
