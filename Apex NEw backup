@@ -1,0 +1,228 @@
+/*public with sharing class LeadController {
+    @AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter) {
+        // Get the start and end dates based on the filter
+        DateTime startDate;
+        DateTime endDate;
+
+        // Calculate the start and end dates based on the date filter
+        switch on dateFilter {
+            when 'TODAY' {
+                startDate = DateTime.newInstance(Date.today(), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'YESTERDAY' {
+                Date yesterday = Date.today().addDays(-1);
+                startDate = DateTime.newInstance(yesterday, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(yesterday, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_7_DAYS' {
+                startDate = DateTime.newInstance(Date.today().addDays(-6), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_30_DAYS' {
+                startDate = DateTime.newInstance(Date.today().addDays(-29), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_WEEK' {
+                Date startOfWeek = Date.today().toStartOfWeek();
+                startDate = DateTime.newInstance(startOfWeek, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_WEEK' {
+                Date startOfLastWeek = Date.today().toStartOfWeek().addDays(-7);
+                Date endOfLastWeek = startOfLastWeek.addDays(6);
+                startDate = DateTime.newInstance(startOfLastWeek, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastWeek, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_MONTH' {
+                Date startOfMonth = Date.today().toStartOfMonth();
+                startDate = DateTime.newInstance(startOfMonth, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_MONTH' {
+                Date startOfLastMonth = Date.today().addMonths(-1).toStartOfMonth();
+                Date endOfLastMonth = Date.newInstance(Date.today().addMonths(-1).year(), Date.today().addMonths(-1).month(), Date.daysInMonth(Date.today().addMonths(-1).year(), Date.today().addMonths(-1).month()));
+                startDate = DateTime.newInstance(startOfLastMonth, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastMonth, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_YEAR' {
+                Date startOfYear = Date.newInstance(Date.today().year(), 1, 1);
+                startDate = DateTime.newInstance(startOfYear, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_YEAR' {
+                Date startOfLastYear = Date.newInstance(Date.today().year() - 1, 1, 1);
+                Date endOfLastYear = Date.newInstance(Date.today().year() - 1, 12, 31);
+                startDate = DateTime.newInstance(startOfLastYear, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastYear, Time.newInstance(23, 59, 59, 999));
+            }
+            when else {
+                // Default to today if an unrecognized filter is provided
+                startDate = DateTime.newInstance(Date.today(), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+        }
+
+        // Construct the dynamic SOQL query
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c, DNU_Referring_lawyer__c, Legal_Status_Reason__c ' +
+               'FROM Lead ' +
+               'WHERE CreatedDate >= :startDate AND CreatedDate <= :endDate';
+
+
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+
+        
+        return leads;
+    }
+}*/
+public with sharing class LeadController {
+    @AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter) {
+        // Map of date filters to SOQL date conditions
+        Map<String, String> dateConditions = new Map<String, String>{
+            'TODAY' => 'CreatedDate = TODAY',
+            'YESTERDAY' => 'CreatedDate = YESTERDAY',
+            'LAST_7_DAYS' => 'CreatedDate = LAST_N_DAYS:7',
+            'LAST_30_DAYS' => 'CreatedDate = LAST_N_DAYS:30',
+            'THIS_WEEK' => 'CreatedDate = THIS_WEEK',
+            'LAST_WEEK' => 'CreatedDate = LAST_WEEK',
+            'THIS_MONTH' => 'CreatedDate = THIS_MONTH',
+            'LAST_MONTH' => 'CreatedDate = LAST_MONTH',
+            'THIS_YEAR' => 'CreatedDate = THIS_YEAR',
+            'LAST_YEAR' => 'CreatedDate = LAST_YEAR'
+        };
+
+        
+        // Define the list of status values
+        List<String> statusValues = new List<String>{
+            'Lawyer assigned - under evaluation',
+            'Lawyer assigned - pending sign-up',
+            'Lawyer Assigned',
+            'Retained'
+        };
+
+        // Build the status values string for the SOQL query
+        String statusValuesString = '';
+        for (Integer i = 0; i < statusValues.size(); i++) {
+            if (i > 0) {
+                statusValuesString += ',';
+            }
+            statusValuesString += '\'' + statusValues[i] + '\'';
+        }
+        // Default to TODAY if an unrecognized filter is provided
+        String dateCondition = dateConditions.get(dateFilter);
+        if (dateCondition == null) {
+            dateCondition = 'CreatedDate = TODAY';
+        }
+
+        // Construct the dynamic SOQL query
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c, DNU_Referring_lawyer__c, Legal_Status_Reason__c ' +
+                      'FROM Lead ' +
+                      'WHERE ' + dateCondition +' AND Legal_Status_New__c IN (' + statusValuesString + ')';
+
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+        
+        return leads;
+    }
+}
+
+//Main code 
+/*
+public with sharing class LeadController {
+    @AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter) {
+        // Get the start and end dates based on the filter
+        DateTime startDate;
+        DateTime endDate;
+
+        // Calculate the start and end dates based on the date filter
+        switch on dateFilter {
+            when 'TODAY' {
+                startDate = DateTime.newInstance(Date.today(), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'YESTERDAY' {
+                Date yesterday = Date.today().addDays(-1);
+                startDate = DateTime.newInstance(yesterday, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(yesterday, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_7_DAYS' {
+                startDate = DateTime.newInstance(Date.today().addDays(-6), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_30_DAYS' {
+                startDate = DateTime.newInstance(Date.today().addDays(-29), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_WEEK' {
+                Date startOfWeek = Date.today().toStartOfWeek();
+                startDate = DateTime.newInstance(startOfWeek, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_WEEK' {
+                Date startOfLastWeek = Date.today().toStartOfWeek().addDays(-7);
+                Date endOfLastWeek = startOfLastWeek.addDays(6);
+                startDate = DateTime.newInstance(startOfLastWeek, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastWeek, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_MONTH' {
+                Date startOfMonth = Date.today().toStartOfMonth();
+                startDate = DateTime.newInstance(startOfMonth, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_MONTH' {
+                Date startOfLastMonth = Date.today().addMonths(-1).toStartOfMonth();
+                Date endOfLastMonth = Date.newInstance(Date.today().addMonths(-1).year(), Date.today().addMonths(-1).month(), Date.daysInMonth(Date.today().addMonths(-1).year(), Date.today().addMonths(-1).month()));
+                startDate = DateTime.newInstance(startOfLastMonth, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastMonth, Time.newInstance(23, 59, 59, 999));
+            }
+            when 'THIS_YEAR' {
+                Date startOfYear = Date.newInstance(Date.today().year(), 1, 1);
+                startDate = DateTime.newInstance(startOfYear, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+            when 'LAST_YEAR' {
+                Date startOfLastYear = Date.newInstance(Date.today().year() - 1, 1, 1);
+                Date endOfLastYear = Date.newInstance(Date.today().year() - 1, 12, 31);
+                startDate = DateTime.newInstance(startOfLastYear, Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(endOfLastYear, Time.newInstance(23, 59, 59, 999));
+            }
+            when else {
+                // Default to today if an unrecognized filter is provided
+                startDate = DateTime.newInstance(Date.today(), Time.newInstance(0, 0, 0, 0));
+                endDate = DateTime.newInstance(Date.today(), Time.newInstance(23, 59, 59, 999));
+            }
+        }
+
+        // Define the list of status values
+        List<String> statusValues = new List<String>{
+            'Lawyer assigned - under evaluation',
+            'Lawyer assigned - pending sign-up',
+            'Lawyer Assigned',
+            'Retained'
+        };
+
+        // Build the status values string for the SOQL query
+        String statusValuesString = '';
+        for (Integer i = 0; i < statusValues.size(); i++) {
+            if (i > 0) {
+                statusValuesString += ',';
+            }
+            statusValuesString += '\'' + statusValues[i] + '\'';
+        }
+
+        // Construct the dynamic SOQL query
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c , DNU_Referring_lawyer__c, Legal_Status_Reason__c ' +
+                       'FROM Lead ' +
+                       'WHERE CreatedDate >= :startDate AND CreatedDate <= :endDate ' +
+                       'AND Legal_Status_New__c IN (' + statusValuesString + ')';
+
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+
+        return leads;
+    }
+}*/
