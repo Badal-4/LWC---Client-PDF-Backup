@@ -1,0 +1,237 @@
+/*public with sharing class LeadController 
+{
+    @AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter) {
+        // Map of date filters to SOQL date conditions
+        Map<String, String> dateConditions = new Map<String, String>{
+            'TODAY' => 'CreatedDate = TODAY',
+            'YESTERDAY' => 'CreatedDate = YESTERDAY',
+            'LAST_7_DAYS' => 'CreatedDate = LAST_N_DAYS:7',
+            'LAST_30_DAYS' => 'CreatedDate = LAST_N_DAYS:30',
+            'THIS_WEEK' => 'CreatedDate = THIS_WEEK',
+            'LAST_WEEK' => 'CreatedDate = LAST_WEEK',
+            'THIS_MONTH' => 'CreatedDate = THIS_MONTH',
+            'LAST_MONTH' => 'CreatedDate = LAST_MONTH',
+            'THIS_YEAR' => 'CreatedDate = THIS_YEAR',
+            'LAST_YEAR' => 'CreatedDate = LAST_YEAR'
+        };
+
+        
+        // Define the list of status values
+        List<String> statusValues = new List<String>{
+            'Lawyer assigned - under evaluation',
+            'Lawyer assigned - pending sign-up',
+            'Lawyer Assigned',
+            'Retained',
+                'Assigned to a lawyer'
+        };
+
+        // Build the status values string for the SOQL query
+        String statusValuesString = '';
+        for (Integer i = 0; i < statusValues.size(); i++) {
+            if (i > 0) {
+                statusValuesString += ',';
+            }
+            statusValuesString += '\'' + statusValues[i] + '\'';
+        }
+        // Default to TODAY if an unrecognized filter is provided
+        String dateCondition = dateConditions.get(dateFilter);
+        
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c, DNU_Lawyer_Referral__r.Name , Legal_Status_Reason__c ' +
+        'FROM Lead ' +
+        'WHERE ' + dateCondition + ' AND Legal_Status_New__c IN (' + statusValuesString + ')' ;
+
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+        
+        return leads;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<PicklistOption> getLegalStatusPicklistValues()
+    {
+
+        List<PicklistOption> options = new List<PicklistOption>();
+        
+        // Get the describe result for the Lead object
+        Schema.DescribeSObjectResult leadDescribe = Lead.SObjectType.getDescribe();
+        
+        // Get the field describe result for the Legal_Status_New__c field
+        Schema.DescribeFieldResult fieldResult = leadDescribe.fields.Legal_Status_New__c.getDescribe();
+        
+        // Get the list of picklist values for this field
+        List<Schema.PicklistEntry> picklistValues = fieldResult.getPicklistValues();
+        
+        // Add each picklist value to our options list
+        for(Schema.PicklistEntry entry : picklistValues) {
+            options.add(new PicklistOption(entry.getLabel(), entry.getValue()));
+        }
+        
+        return options;
+    }
+
+    public class PicklistOption
+    {
+        @AuraEnabled public string label;
+        @AuraEnabled public string value;
+
+        public PicklistOption(String label,String value)
+        {
+            this.label = label;
+            this.value = value;
+        }
+    }
+}*/
+public with sharing class LeadController {
+    /*@AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter, String legalStatus) {
+        System.debug('Legal Status --> '+legalStatus);
+        // Map of date filters to SOQL date conditions
+        Map<String, String> dateConditions = new Map<String, String>{
+            'TODAY' => 'CreatedDate = TODAY',
+            'YESTERDAY' => 'CreatedDate = YESTERDAY',
+            'LAST_7_DAYS' => 'CreatedDate = LAST_N_DAYS:7',
+            'LAST_30_DAYS' => 'CreatedDate = LAST_N_DAYS:30',
+            'THIS_WEEK' => 'CreatedDate = THIS_WEEK',
+            'LAST_WEEK' => 'CreatedDate = LAST_WEEK',
+            'THIS_MONTH' => 'CreatedDate = THIS_MONTH',
+            'LAST_MONTH' => 'CreatedDate = LAST_MONTH',
+            'THIS_YEAR' => 'CreatedDate = THIS_YEAR',
+            'LAST_YEAR' => 'CreatedDate = LAST_YEAR'
+        };
+
+        // Define the list of status values
+        List<String> defaultStatusValues = new List<String>{
+            'Lawyer assigned - under evaluation',
+            'Lawyer assigned - pending sign-up',
+            'Lawyer Assigned',
+            'Retained',
+            'Assigned to a lawyer'
+        };
+
+        // Build the status values string for the SOQL query
+        String statusValuesString = '';
+        List<String> statusValues;
+        
+        // If no legalStatus is provided, use default status values
+        if (String.isEmpty(legalStatus)) {
+            statusValues = defaultStatusValues;
+        } else {
+            statusValues = new List<String>{legalStatus};
+        }
+
+        for (Integer i = 0; i < statusValues.size(); i++) {
+            if (i > 0) {
+                statusValuesString += ',';
+            }
+            statusValuesString += '\'' + statusValues[i] + '\'';
+        }
+        
+        // Default to TODAY if an unrecognized filter is provided
+        String dateCondition = dateConditions.get(dateFilter);
+        
+        // Construct the dynamic SOQL query
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c, DNU_Lawyer_Referral__r.Name , Legal_Status_Reason__c ' +
+            'FROM Lead ' +
+            'WHERE ' + dateCondition + ' AND Legal_Status_New__c IN (' + statusValuesString + ')';
+        
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+        
+        return leads;
+    }*/
+
+    @AuraEnabled(cacheable=true)
+    public static List<Lead> getLeadData(String dateFilter, List<String> legalStatus) {
+        System.debug('Legal Status --> ' + legalStatus);
+
+        // Map of date filters to SOQL date conditions
+        Map<String, String> dateConditions = new Map<String, String>{
+            'TODAY' => 'CreatedDate = TODAY',
+            'YESTERDAY' => 'CreatedDate = YESTERDAY',
+            'LAST_7_DAYS' => 'CreatedDate = LAST_N_DAYS:7',
+            'LAST_30_DAYS' => 'CreatedDate = LAST_N_DAYS:30',
+            'THIS_WEEK' => 'CreatedDate = THIS_WEEK',
+            'LAST_WEEK' => 'CreatedDate = LAST_WEEK',
+            'THIS_MONTH' => 'CreatedDate = THIS_MONTH',
+            'LAST_MONTH' => 'CreatedDate = LAST_MONTH',
+            'THIS_YEAR' => 'CreatedDate = THIS_YEAR',
+            'LAST_YEAR' => 'CreatedDate = LAST_YEAR'
+        };
+
+        // Define the list of default status values
+        List<String> defaultStatusValues = new List<String>{
+            'Lawyer assigned - under evaluation',
+            'Lawyer assigned - pending sign-up',
+            'Lawyer Assigned',
+            'Retained',
+            'Assigned to a lawyer'
+        };
+
+        // Build the status values string for the SOQL query
+        String statusValuesString = '';
+        List<String> statusValues;
+        
+        // Use the provided legalStatus list or default to defaultStatusValues
+        if (legalStatus == null || legalStatus.isEmpty()) {
+            statusValues = defaultStatusValues;
+        } else {
+            statusValues = legalStatus;
+        }
+
+        for (Integer i = 0; i < statusValues.size(); i++) {
+            if (i > 0) {
+                statusValuesString += ',';
+            }
+            statusValuesString += '\'' + statusValues[i] + '\'';
+        }
+        
+        // Default to TODAY if an unrecognized filter is provided
+        String dateCondition = dateConditions.get(dateFilter);
+        
+        // Construct the dynamic SOQL query
+        String query = 'SELECT CreatedDate, Name, Owner.Name, Call_Source__c, Legal_Status_New__c, Description, Sub_source__c, Date_of_Accident__c, Incident_Location__c, Case_Type__c, Lawyer__r.Name, Legal_Status__c, Client_Sign_Up_Method_1__c, commercial_or_minimal_policy__c, How_is_it_commercial__c, Medical_Status__c, Reason__c, MIC__c, What_is_the_MIC__c, How_did_the_client_hear_about_us__c, DNU_Lawyer_Referral__r.Name , Legal_Status_Reason__c ' +
+            'FROM Lead ' +
+            'WHERE ' + dateCondition + ' AND Legal_Status_New__c IN (' + statusValuesString + ')';
+        
+        // Execute the dynamic SOQL query
+        List<Lead> leads = Database.query(query);
+        System.debug('Leads ###@@@@##'+leads);
+        return leads;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<PicklistOption> getLegalStatusPicklistValues()
+    {
+
+        List<PicklistOption> options = new List<PicklistOption>();
+        
+        // Get the describe result for the Lead object
+        Schema.DescribeSObjectResult leadDescribe = Lead.SObjectType.getDescribe();
+        
+        // Get the field describe result for the Legal_Status_New__c field
+        Schema.DescribeFieldResult fieldResult = leadDescribe.fields.getMap().get('Legal_Status_New__c').getDescribe();
+        
+        // Get the list of picklist values for this field
+        List<Schema.PicklistEntry> picklistValues = fieldResult.getPicklistValues();
+        
+        // Add each picklist value to our options list
+        for(Schema.PicklistEntry entry : picklistValues) {
+            options.add(new PicklistOption(entry.getLabel(), entry.getValue()));
+        }
+        
+        return options;
+    }
+
+    public class PicklistOption
+    {
+        @AuraEnabled public string label;
+        @AuraEnabled public string value;
+
+        public PicklistOption(String label,String value)
+        {
+            this.label = label;
+            this.value = value;
+        }
+    }
+}
